@@ -1,6 +1,7 @@
 import compose
-
 import os
+
+from compose.contrib import deployments
 from importlib import import_module
 from django.core.management.base import CommandError
 from django.core.management.templates import TemplateCommand
@@ -16,31 +17,22 @@ class Command(TemplateCommand):
     def handle(self, **options):
         deployment_name, target, template = options.pop('name'), options.pop('directory'), options.pop('template')
 
+        # validate_name method is hard-coded to handle only 'app' or 'project' strings
+        # provided in the 'app_or_project' argument. However, those strings are used only
+        # in the error messages and, so that the 'deployment' string is also valid.
+
+        self.validate_name(deployment_name, "deployment")
+
         if target is None:
-            top_dir = os.path.join(compose.__path__[0], '..', 'deployments', deployment_name)
-            try:
-                os.makedirs(top_dir)
-            except OSError as e:
-                if e.errno == errno.EEXIST:
-                    message = "'%s' already exists" % top_dir
-                else:
-                    message = e
-                raise CommandError(message)
-            target = top_dir
+            target = os.path.join(compose.__path__[0], '..', 'deployments')
 
         # Determines where the deployment templates are.
         # Use compose.__path__[0] as the default because we don't
         # know into which directory Django has been installed.
         # 
         if template is None:
-            options['template'] = os.path.join(compose.__path__[0], 'conf', 'deployment_template')
+            options['template'] = os.path.join(deployments.__path__[0], 'conf', 'deployment_template')
 
-            
-        # validate_name method is hard-coded to handle only 'app' or 'project' strings
-        # provided in the 'app_or_project' argument. However, those strings are used only
-        # in the error messages and, so that the 'deployment' string is also valid.
-
-        self.validate_name(deployment_name, "deployment")
 
         # Check that the project_name cannot be imported.
         try:

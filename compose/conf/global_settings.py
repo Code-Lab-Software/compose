@@ -4,7 +4,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'compose',
+    'compose.contrib.deployments',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -22,6 +22,6 @@ ROOT_URLCONF = 'compose.conf.urls'
 STATIC_URL = '/static/'
 WSGI_APPLICATION = 'compose.wsgi.wsgi.application'
 
-DATABASE_ROUTERS = ('compose.db.routers.ComposeRouter',) # This has to be a list, not tuple
+DATABASE_ROUTERS = ('compose.db.routers.ComposeRouter',) 
 
 
