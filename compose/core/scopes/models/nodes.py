@@ -31,9 +31,17 @@ class Node(models.Model):
 
 
 class NodeState(models.Model):
+
     node = models.ForeignKey('scopes.Node', related_name='states')
 
 
 class NodeArgument(models.Model):
 
     node = models.ForeignKey('scopes.Node', related_name='arguments')
+
+class NodeArgumentState(models.Model):
+
+    node_argument = models.OneToOneField('scopes.NodeArgument', related_name='state')
+    node_state = models.ForeignKey('scopes.NodeState', related_name='arguments')
+
+    

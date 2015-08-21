@@ -1,4 +1,4 @@
-from compose.core.scopes.nodes.models import build_nodes_dependency_list
+from compose.core.scopes.models.nodes import build_node_dependency_list
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 

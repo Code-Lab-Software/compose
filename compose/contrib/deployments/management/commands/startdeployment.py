@@ -23,9 +23,20 @@ class Command(TemplateCommand):
 
         self.validate_name(deployment_name, "deployment")
 
+        # if some directory is given, make sure it's nicely expanded
         if target is None:
-            target = os.path.join(compose.__path__[0], '..', 'deployments')
+            top_dir = os.path.join(compose.__path__[0], '..', 'deployments', deployment_name)
+            try:
+                os.makedirs(top_dir)
+            except OSError as e:
+                if e.errno == errno.EEXIST:
+                    message = "'%s' already exists" % top_dir
+                else:
+                    message = e
+                raise CommandError(message)
+            target = top_dir
 
+            
         # Determines where the deployment templates are.
         # Use compose.__path__[0] as the default because we don't
         # know into which directory Django has been installed.
