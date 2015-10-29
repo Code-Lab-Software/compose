@@ -1,8 +1,17 @@
+import inspect
+
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.signals import post_save
 
 CONTROLLER_CLASSES = ['Controller', 'ControllerArgument', 'ControllerState']
+
+def register_on_post_save(sender, instance, created, raw, using, **kwargs):
+    pass
+
+def check_controller_type(bases):
+    controller_classes_set = set(CONTROLLER_CLASSES)
+    return controller_classes_set.intersection(set([base.__name__ for base in bases]))
 
 # -------------------------------------------------------
 # Controller
@@ -12,8 +21,7 @@ class ControllerTracker(ModelBase):
         _new = super(ControllerTracker, cls).__new__(cls, name, bases, attrs)
         # Create a set object out of CONTROLLER_CLASSES list. We will use
         # it to check wich `Controller*` class is in the creation process
-        controller_classes_set = set(CONTROLLER_CLASSES)
-        controller_classes_intersection = controller_classes_set.intersection(set([base.__name__ for base in bases]))
+        controller_classes_intersection = check_controller_type(bases)
         # Now check, whether the intersetion is len == 1 object
         if len(controller_classes_intersection) > 1:
             # We raise exception here - it's not allowed
@@ -29,45 +37,54 @@ class ControllerTracker(ModelBase):
             # and then, we can rerieve the class object itself
             # from the module globals()... and finally register the controller
             # subclass
-            globals()[controller_class].register_model(_new)
+            globals()[controller_class].register_model(_new, controller_class)
         return _new
 
 
 # -------------------------------------------------------
-# Controller
+# ControllerBase
 # -------------------------------------------------------
     
-class Controller(models.Model):
+class ControllerBase(models.Model):
     __metaclass__ = ControllerTracker
     __models_registry = {}
 
+    @classmethod
+    def register_model(cls, mdl, controller_class):
+        controller_class = controller_class.lower()
+        print 'Registering %s: %s' % (controller_class, mdl)
+        if not cls.__models_registry.has_key(mdl._meta.app_label):
+            cls.__models_registry[mdl._meta.app_label] = {'controller': None, 'states': [], 'arguments': []}
+        if controller_class == 'controller':
+            cls.__models_registry[mdl._meta.app_label][controller_class] = mdl
+        else:
+            cls.__models_registry[mdl._meta.app_label]['%ss' % controller_class.replace('controller', '')].append(mdl)
+
+        print cls.__models_registry
+        post_save.connect(register_on_post_save, sender=mdl)
+
+    class Meta:
+        abstract = True
+
+    
+# -------------------------------------------------------
+# Controller
+# -------------------------------------------------------
+
+class Controller(ControllerBase):
     name = models.SlugField(unique=True)
 
     class Meta:
         abstract = True
-    
-    @classmethod
-    def register_model(cls, mdl):
-        print 'Registering Controller class'
-        # cls.__tracked_models.append(mdl)
-        # post_save.connect(notify_on_post_save, sender=mdl)
-        
-def notify_on_post_save(sender, instance, created, raw, using, **kwargs):
-    pass
-
+   
 # -------------------------------------------------------
 # ControllerArgument
 # -------------------------------------------------------
 
-class ControllerArgument(models.Model):
-    __metaclass__ = ControllerTracker
-    
+class ControllerArgument(ControllerBase):
+
     name = models.SlugField(unique=True)
 
-    @classmethod
-    def register_model(cls, mdl):
-        print 'Registering Argument subclass..'
-    
     class Meta:
         abstract = True
 
@@ -75,16 +92,10 @@ class ControllerArgument(models.Model):
 # ControllerState
 # -------------------------------------------------------
 
-class ControllerState(models.Model):
-    __metaclass__ = ControllerTracker
-    
+class ControllerState(ControllerBase):
+
     name = models.SlugField(unique=True)
 
-    @classmethod
-    def register_model(cls, mdl):
-        print 'Registering State subclass..'
-
-    
     class Meta:
         abstract = True
 
