@@ -72,8 +72,13 @@ class ControllerBase(models.Model):
 # -------------------------------------------------------
 
 class Controller(ControllerBase):
-    name = models.SlugField(unique=True)
-
+    branch = models.ForeignKey('scopes.Branch', related_name='nodes')
+    node = models.OneToOneField('scopes.Node', null=True)
+    name = models.SlugField(max_length=128, unique=True)
+    # Verbose information
+    verbose_name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    
     class Meta:
         abstract = True
    
@@ -82,7 +87,6 @@ class Controller(ControllerBase):
 # -------------------------------------------------------
 
 class ControllerArgument(ControllerBase):
-
     name = models.SlugField(unique=True)
 
     class Meta:
@@ -93,7 +97,6 @@ class ControllerArgument(ControllerBase):
 # -------------------------------------------------------
 
 class ControllerState(ControllerBase):
-
     name = models.SlugField(unique=True)
 
     class Meta:
