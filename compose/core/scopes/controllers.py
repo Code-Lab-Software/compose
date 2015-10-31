@@ -72,7 +72,7 @@ class ControllerBase(models.Model):
 # -------------------------------------------------------
 
 class Controller(ControllerBase):
-    branch = models.ForeignKey('scopes.Branch', related_name='nodes')
+    branch = models.ForeignKey('scopes.Branch')
     node = models.OneToOneField('scopes.Node', null=True)
     name = models.SlugField(max_length=128, unique=True)
     # Verbose information

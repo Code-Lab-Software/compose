@@ -16,17 +16,6 @@ class Branch(models.Model):
         return nodes_dependency_list
 
     class Meta:
-        unique_together = (('branch', 'name'), ('branch', 'weight'))
+        unique_together = (('root', 'name'),)
         ordering = ('name',)
 
-
-class BranchArgument(models.Model):
-    branch = models.ForeignKey('scopes.Branch', related_name='arguments')
-    name = models.SlugField(max_length=128)
-    regex = models.CharField(max_length=255, help_text=_("Will validate this argument value fetched with `scopes.BranchArgumentProvider`"))
-    weight = models.IntegerField()
-    description = models.TextField(blank=True)
-
-    class Meta:
-        unique_together = (('branch', 'name'), ('branch', 'weight'))
-        ordering = ('branch__name', 'weight',)

@@ -1,6 +1,5 @@
 from django.db import models
 
-
 def build_node_dependency_list(node, dependency_list=[]):
     if node in dependency_list:
         return
