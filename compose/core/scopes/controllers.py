@@ -7,11 +7,27 @@ from django.db.models.signals import post_save
 CONTROLLER_CLASSES = ['Controller', 'ControllerArgument', 'ControllerState']
 
 def register_on_post_save(sender, instance, created, raw, using, **kwargs):
-    pass
+    instance.register_with_branch()
 
-def check_controller_type(bases):
+def get_controller_class(bases):
+    # Create a set object out of CONTROLLER_CLASSES list. We will use
+    # it to check wich `Controller*` class is in the creation process
     controller_classes_set = set(CONTROLLER_CLASSES)
-    return controller_classes_set.intersection(set([base.__name__ for base in bases]))
+    controller_classes_intersection = controller_classes_set.intersection(set([base.__name__ for base in bases]))
+    # Now check, whether the intersetion is len == 1 object
+    if len(controller_classes_intersection) > 1:
+        # We raise exception here - it's not allowed
+        # for the classes to have more than one `Controller*`
+        # as parent class
+        raise TypeError(
+                        "Controller subclass can use only one Controller* superclass."
+                        "Now it is using '%s'." % controller_classes_intersection
+                    )
+    elif len(controller_classes_intersection) == 1:
+        # Let's get and return the class name
+        return controller_classes_intersection.pop()
+    return None
+
 
 # -------------------------------------------------------
 # Controller
@@ -19,25 +35,15 @@ def check_controller_type(bases):
 class ControllerTracker(ModelBase):
     def __new__(cls, name, bases, attrs):
         _new = super(ControllerTracker, cls).__new__(cls, name, bases, attrs)
-        # Create a set object out of CONTROLLER_CLASSES list. We will use
-        # it to check wich `Controller*` class is in the creation process
-        controller_classes_intersection = check_controller_type(bases)
-        # Now check, whether the intersetion is len == 1 object
-        if len(controller_classes_intersection) > 1:
-            # We raise exception here - it's not allowed
-            # for the classes to have more than one `Controller*`
-            # as parent class
-            raise TypeError(
-                            "Controller subclass can use only one Controller* superclass."
-                            "Now it is using '%s'." % controller_classes_intersection
-                        )
-        elif len(controller_classes_intersection) == 1:
-            # Let's get the class name
-            controller_class = controller_classes_intersection.pop()
+        # Register the controller subclass first. `get_controller_class`
+        # may throw TypeError exception if the `bases` contains more than
+        # one base controller class, but that's OKay - if there's inproper
+        # subclasses set we don't want to have class created
+        controller_class_name = get_controller_class(bases)
+        if not controller_class_name is None:
             # and then, we can rerieve the class object itself
-            # from the module globals()... and finally register the controller
-            # subclass
-            globals()[controller_class].register_model(_new, controller_class)
+            # from the module globals().
+            globals()[controller_class_name].register_model(_new)
         return _new
 
 
@@ -50,18 +56,36 @@ class ControllerBase(models.Model):
     __models_registry = {}
 
     @classmethod
-    def register_model(cls, mdl, controller_class):
-        controller_class = controller_class.lower()
+    def register_model(cls, mdl):
+        controller_class = cls.__name__.lower()
         print 'Registering %s: %s' % (controller_class, mdl)
         if not cls.__models_registry.has_key(mdl._meta.app_label):
             cls.__models_registry[mdl._meta.app_label] = {'controller': None, 'states': [], 'arguments': []}
-        if controller_class == 'controller':
-            cls.__models_registry[mdl._meta.app_label][controller_class] = mdl
-        else:
-            cls.__models_registry[mdl._meta.app_label]['%ss' % controller_class.replace('controller', '')].append(mdl)
-
-        print cls.__models_registry
+        # Now delegate the registry update to the proper subclass
+        cls.update_registry(mdl, cls.__models_registry)
+        # And in the end connect the post_save handler
         post_save.connect(register_on_post_save, sender=mdl)
+
+    @classmethod
+    def update_registry(cls, mdl, registry):
+        raise NotImplementedError('`update_registry` class method have to be implemented in ControllerBase derived classes.')
+
+    def get_scopes_type_model(self):
+        models_map = {'Conroller': 'NodeType', 'ControllerArgument': 'NodeArgumentType', 'ControllerState': 'NodeStateType'}
+        return apps.get_model('scopes.%s' % models_map.get(self.__class__.name))
+
+    def get_scopes_entity_model(self):
+        models_map = {'Conroller': 'Node', 'ControllerArgument': 'NodeArgument', 'ControllerState': 'NodeState'}
+        return apps.get_model('scopes.%s' % models_map.get(self.__class__.name))
+    
+    def register_scopes_type(self):
+        return self.get_scopes_type_model().objects.register_for_controller(self)        
+    
+    def register_scopes_entity(self):
+        return self.get_scopes_entity_model().objects.register_for_controller(self)        
+
+    def register_with_branch():
+        return self.register_scopes_entity()
 
     class Meta:
         abstract = True
@@ -78,7 +102,11 @@ class Controller(ControllerBase):
     # Verbose information
     verbose_name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    
+
+    @classmethod
+    def update_registry(cls, mdl, registry):
+        registry[mdl._meta.app_label]['controller'] = mdl
+        
     class Meta:
         abstract = True
    
@@ -89,6 +117,10 @@ class Controller(ControllerBase):
 class ControllerArgument(ControllerBase):
     name = models.SlugField(unique=True)
 
+    @classmethod
+    def update_registry(cls, mdl, registry):
+        registry[mdl._meta.app_label]['arguments'].append(mdl)
+    
     class Meta:
         abstract = True
 
@@ -99,6 +131,10 @@ class ControllerArgument(ControllerBase):
 class ControllerState(ControllerBase):
     name = models.SlugField(unique=True)
 
+    @classmethod
+    def update_registry(cls, mdl, registry):
+        registry[mdl._meta.app_label]['states'].append(mdl)
+    
     class Meta:
         abstract = True
 
