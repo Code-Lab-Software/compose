@@ -15,9 +15,9 @@ def build_node_dependency_list(node, dependency_list=[]):
 
 class NodeTypeManager(models.Manager):
 
-    def register_for_controller(self, controller):
-        node_type, created = self.get_or_create(app_label=controller._meta.app_label,
-                                          model_name=controller._meta.object_name.lower())
+    def register_for_entity(self, entity):
+        node_type, created = self.get_or_create(app_label=entity._meta.app_label,
+                                                model_name=entity._meta.object_name.lower())
         return node_type
     
 
@@ -39,9 +39,13 @@ class NodeType(models.Model):
 
 class NodeArgumentTypeManager(models.Manager):
 
-    def register_for_controller(self, controller):
-        raise NotImplementedError('Implementation pending...')
-        
+    def register_for_entity(self, entity):
+        node_type = NodeType.objects.register_for_entity(entity.get_controller())
+        argument_type, created = self.get_or_create(node_type=node_type,
+                                                    model_name=entity._meta.object_name.lower())
+        return argument_type
+
+
 class NodeArgumentType(models.Model):
     node_type = models.ForeignKey('scopes.NodeType')
     model_name = models.CharField(max_length=127)
@@ -56,9 +60,11 @@ class NodeArgumentType(models.Model):
 
 class NodeStateTypeManager(models.Manager):
 
-    def register_for_controller(self, controller):
-        raise NotImplementedError('Implementation pending...')
-
+    def register_for_entity(self, entity):
+        node_type = NodeType.objects.register_for_entity(entity.get_controller())
+        state_type, created = self.get_or_create(node_type=node_type,
+                                                 model_name=entity._meta.object_name.lower())
+        return state_type
         
 class NodeStateType(models.Model):
     node_type = models.ForeignKey('scopes.NodeType')
@@ -78,9 +84,9 @@ class NodeStateType(models.Model):
 
 class NodeManager(models.Manager):
 
-    def register_for_controller(self, controller):
-        node_type = apps.get_model('scopes', 'NodeType').objects.register_for_controller(controller)
-        node, created = self.get_or_create(branch=controller.branch, node_type=node_type, src_id=controller.pk)
+    def register_for_entity(self, entity):
+        node_type = apps.get_model('scopes', 'NodeType').objects.register_for_entity(entity)
+        node, created = self.get_or_create(branch=entity.branch, node_type=node_type, src_id=entity.pk)
         return node
 
 
@@ -103,10 +109,13 @@ class Node(models.Model):
 
 class NodeStateManager(models.Manager):
 
-    def register_for_controller(self, controller):
-        raise NotImplementedError('Implementation pending...')
+    def register_for_entity(self, entity):
+        node = Node.objects.register_for_entity(entity.get_controller())
+        node_state_type = NodeStateType.objects.register_for_entity(entity)
+        node_state, created = self.get_or_create(node=node, node_state_type=node_state_type, src_id=entity.pk)
+        return node_state
 
-        
+    
 class NodeState(models.Model):
     node = models.ForeignKey('scopes.Node', related_name='states')
     node_state_type = models.ForeignKey('NodeStateType', related_name='states')
@@ -123,9 +132,11 @@ class NodeState(models.Model):
 
 class NodeArgumentManager(models.Manager):
 
-    def register_for_controller(self, controller):
-        raise NotImplementedError('Implementation pending...')
-
+    def register_for_entity(self, entity):
+        node = Node.objects.register_for_entity(entity.get_controller())
+        node_argument_type = NodeArgumentType.objects.register_for_entity(entity)
+        node_argument, created = self.get_or_create(node=node, node_argument_type=node_argument_type, src_id=entity.pk)
+        return node_argument
         
 class NodeArgument(models.Model):
     node = models.ForeignKey('scopes.Node', related_name='arguments')

@@ -79,10 +79,10 @@ class ControllerBase(models.Model):
         return apps.get_model('scopes.%s' % models_map.get(self.__class__.name))
     
     def register_scopes_type(self):
-        return self.get_scopes_type_model().objects.register_for_controller(self)        
+        return self.get_scopes_type_model().objects.register_for_entity(self)        
     
     def register_scopes_entity(self):
-        return self.get_scopes_entity_model().objects.register_for_controller(self)        
+        return self.get_scopes_entity_model().objects.register_for_entity(self)        
 
     def register_with_branch():
         return self.register_scopes_entity()
@@ -90,7 +90,15 @@ class ControllerBase(models.Model):
     class Meta:
         abstract = True
 
+class ControllerAttributeMixin(object):
     
+    def get_controller(self):
+        # It is assumed, that by default the controller argument
+        # points to it's parent through the `controller`
+        # attribute. The subclasses can override it, though.
+        return self.controller
+
+        
 # -------------------------------------------------------
 # Controller
 # -------------------------------------------------------
@@ -114,22 +122,27 @@ class Controller(ControllerBase):
 # ControllerArgument
 # -------------------------------------------------------
 
-class ControllerArgument(ControllerBase):
-    name = models.SlugField(unique=True)
-
+class ControllerArgument(ControllerBase, ControllerAttributeMixin):
+    name = models.SlugField()
+    
     @classmethod
     def update_registry(cls, mdl, registry):
         registry[mdl._meta.app_label]['arguments'].append(mdl)
     
     class Meta:
         abstract = True
+        # It's assumed here, that relation to the parent controller object
+        # is provided with the 'controller' ForeignKey or
+        # OneToOneField. But it would be better to handle the name of the attribute
+        # dynamically. 
+        unique_together = (('name', 'controller'),)
 
 # -------------------------------------------------------
 # ControllerState
 # -------------------------------------------------------
 
-class ControllerState(ControllerBase):
-    name = models.SlugField(unique=True)
+class ControllerState(ControllerBase, ControllerAttributeMixin):
+    name = models.SlugField()
 
     @classmethod
     def update_registry(cls, mdl, registry):
@@ -137,5 +150,8 @@ class ControllerState(ControllerBase):
     
     class Meta:
         abstract = True
+        # Same story with the `controller` key as in the `unique_together`
+        # in ControllerArgument class
+        unique_together = (('name', 'controller'),)
 
     
