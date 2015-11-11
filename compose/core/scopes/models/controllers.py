@@ -1,5 +1,6 @@
 import inspect
 
+from django.apps import apps
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.signals import post_save
@@ -9,6 +10,9 @@ CONTROLLER_CLASSES = ['Controller', 'ControllerArgument', 'ControllerState']
 def register_on_post_save(sender, instance, created, raw, using, **kwargs):
     instance.register_with_branch()
 
+def is_controller(model):
+    return ControllerBase.is_controller(model)
+    
 def get_controller_class(bases):
     # Create a set object out of CONTROLLER_CLASSES list. We will use
     # it to check wich `Controller*` class is in the creation process
@@ -27,7 +31,6 @@ def get_controller_class(bases):
         # Let's get and return the class name
         return controller_classes_intersection.pop()
     return None
-
 
 # -------------------------------------------------------
 # Controller
@@ -58,13 +61,14 @@ class ControllerBase(models.Model):
     @classmethod
     def register_model(cls, mdl):
         controller_class = cls.__name__.lower()
-        print 'Registering %s: %s' % (controller_class, mdl)
         if not cls.__models_registry.has_key(mdl._meta.app_label):
             cls.__models_registry[mdl._meta.app_label] = {'controller': None, 'states': [], 'arguments': []}
-        # Now delegate the registry update to the proper subclass
-        cls.update_registry(mdl, cls.__models_registry)
-        # And in the end connect the post_save handler
-        post_save.connect(register_on_post_save, sender=mdl)
+        if cls.__models_registry.has_key(mdl._meta.app_label) and not cls.__models_registry[mdl._meta.app_label].has_key(mdl._meta.object_name):
+            print 'Registering %s: %s' % (controller_class, mdl)
+            # Now delegate the registry update to the proper subclass
+            cls.update_registry(mdl, cls.__models_registry)
+            # And in the end connect the post_save handler
+            post_save.connect(register_on_post_save, sender=mdl)
 
     @classmethod
     def update_registry(cls, mdl, registry):
@@ -75,8 +79,13 @@ class ControllerBase(models.Model):
         return apps.get_model('scopes.%s' % models_map.get(self.__class__.name))
 
     def get_scopes_entity_model(self):
-        models_map = {'Conroller': 'Node', 'ControllerArgument': 'NodeArgument', 'ControllerState': 'NodeState'}
-        return apps.get_model('scopes.%s' % models_map.get(self.__class__.name))
+        models_map = {'Controller': 'Node', 'ControllerArgument': 'NodeArgument', 'ControllerState': 'NodeState'}
+        # Below we should call some 'get_controller_type' method instead of a complicated __models_registry lookup
+        return apps.get_model('scopes.%s' % models_map.get(ControllerBase.__models_registry[self._meta.app_label][self._meta.object_name].__name__))
+
+    @classmethod
+    def is_controller(cls, model):
+        return ControllerBase.__models_registry.has_key(model._meta.app_label)
     
     def register_scopes_type(self):
         return self.get_scopes_type_model().objects.register_for_entity(self)        
@@ -84,7 +93,7 @@ class ControllerBase(models.Model):
     def register_scopes_entity(self):
         return self.get_scopes_entity_model().objects.register_for_entity(self)        
 
-    def register_with_branch():
+    def register_with_branch(self):
         return self.register_scopes_entity()
 
     class Meta:
@@ -97,7 +106,6 @@ class ControllerAttributeMixin(object):
         # points to it's parent through the `controller`
         # attribute. The subclasses can override it, though.
         return self.controller
-
         
 # -------------------------------------------------------
 # Controller
@@ -105,7 +113,7 @@ class ControllerAttributeMixin(object):
 
 class Controller(ControllerBase):
     branch = models.ForeignKey('scopes.Branch')
-    node = models.OneToOneField('scopes.Node', null=True)
+    node = models.OneToOneField('scopes.Node', null=True, editable=False)
     name = models.SlugField(max_length=128, unique=True)
     # Verbose information
     verbose_name = models.CharField(max_length=255)
@@ -114,6 +122,7 @@ class Controller(ControllerBase):
     @classmethod
     def update_registry(cls, mdl, registry):
         registry[mdl._meta.app_label]['controller'] = mdl
+        registry[mdl._meta.app_label][mdl._meta.object_name] = Controller
         
     class Meta:
         abstract = True
@@ -128,6 +137,7 @@ class ControllerArgument(ControllerBase, ControllerAttributeMixin):
     @classmethod
     def update_registry(cls, mdl, registry):
         registry[mdl._meta.app_label]['arguments'].append(mdl)
+        registry[mdl._meta.app_label][mdl._meta.object_name] = ControllerArgument
     
     class Meta:
         abstract = True
@@ -147,6 +157,7 @@ class ControllerState(ControllerBase, ControllerAttributeMixin):
     @classmethod
     def update_registry(cls, mdl, registry):
         registry[mdl._meta.app_label]['states'].append(mdl)
+        registry[mdl._meta.app_label][mdl._meta.object_name] = ControllerState
     
     class Meta:
         abstract = True

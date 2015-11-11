@@ -2,11 +2,12 @@
 import inspect
 
 from django.conf import settings
+from compose.core.scopes.models import is_controller
 
 COMPOSE_APPS = ('scopes', )
 
 def is_compose_model(model):
-    return model._meta.app_label in COMPOSE_APPS or 'ComposeBaseModel' in (cls.__name__ for cls in inspect.getmro(model))
+    return (model._meta.app_label in COMPOSE_APPS) or is_controller(model)
 
 def is_compose_object(obj):
     return is_compose_model(obj.__class__)
@@ -25,10 +26,10 @@ class ComposeRouter(object):
             return True
         return None
 
-    def allow_migrate(self, db, app_label, model=None, **hints):
-        if not model is None:
+    def allow_migrate(self, db, app_label, model_name=None, **hints):
+        if hints.get('model'):
             if db == getattr(settings, 'DATABASES_MAP').get('compose'):
-                return is_compose_model(model)
-            elif is_compose_model(model):
+                return is_compose_model(hints.get('model'))
+            elif is_compose_model(hints.get('model')):
                 return False
         return None

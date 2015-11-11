@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.db import models
 
 def build_node_dependency_list(node, dependency_list=[]):
