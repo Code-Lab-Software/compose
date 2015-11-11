@@ -60,7 +60,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = '{{ deployment_name }}.wsgi.application'
+WSGI_APPLICATION = '{{ deployment_name }}.wsgi.wsgi.application'
 
 
 # Internationalization
@@ -81,6 +81,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/{{ docs_version }}/howto/static-files/
 
 STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
 
 DATABASE_ROUTERS = ('compose.db.routers.ComposeRouter',)
 # -----------------
