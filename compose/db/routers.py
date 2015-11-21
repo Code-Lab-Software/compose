@@ -4,7 +4,10 @@ import inspect
 from django.conf import settings
 from compose.core.scopes.models import is_controller
 
-COMPOSE_APPS = ('scopes', )
+COMPOSE_APPS = (
+    'scopes',
+    'resources',
+)
 
 def is_compose_model(model):
     return (model._meta.app_label in COMPOSE_APPS) or is_controller(model)
