@@ -8,7 +8,8 @@ from django.db.models.signals import post_save
 CONTROLLER_CLASSES = ['Controller', 'ControllerStateArgument', 'ControllerState', 'ControllerStateArgumentProvider']
 
 def register_on_post_save(sender, instance, created, raw, using, **kwargs):
-    instance.register_with_branch()
+    if created:
+        instance.register_with_branch()
 
 def is_controller(model):
     return ControllerBase.is_controller(model)
@@ -201,7 +202,7 @@ class ControllerStateArgumentProvider(ControllerBase, ControllerAttributeMixin):
 
     @classmethod
     def update_registry(cls, mdl, registry):
-        registry[mdl._meta.app_label]['argument_providers'].appen(mdl)
+        registry[mdl._meta.app_label]['argument_providers'].append(mdl)
         registry[mdl._meta.app_label][mdl._meta.object_name] = ControllerStateArgumentProvider
     
     def connect_with_scopes_entity(self, node_state_argument_provider):
