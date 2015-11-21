@@ -8,3 +8,7 @@ class Root(models.Model):
 
     class Meta:
         ordering = ('name',)
+
+
+    def __unicode__(self):
+        return self.verbose_name
