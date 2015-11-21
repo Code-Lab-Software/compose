@@ -126,10 +126,10 @@ class Node(models.Model):
     def get_object(self):
         return self.node_type.get_model().objects.get(id=self.src_id)
 
-    def get(self):
+    def get(self, **kwargs):
         data = {}
         for state in self.states.all():
-            data[state.get_object().name] = state.get()
+            data[state.get_object().name] = state.get(**kwargs)
         return data
         
     class Meta:
@@ -155,8 +155,12 @@ class NodeState(models.Model):
     def get_object(self):
         return self.node_state_type.get_model().objects.get(id=self.src_id)
 
-    def get(self):
-        return self.get_object().get()
+    def get(self, **kwargs):
+        arguments_values = {}
+        for argument in self.arguments.all():
+            arguments_values[argument.get_object().name] = kwargs.get(argument.get_object().name, None)
+            
+        return self.get_object().get(**arguments_values)
         
     class Meta:
         unique_together = (('node_state_type', 'src_id'),)
@@ -165,9 +169,9 @@ class NodeState(models.Model):
 class NodeStateArgumentManager(models.Manager):
 
     def register_for_entity(self, entity):
-        node = Node.objects.register_for_entity(entity.get_controller())
+        node_state = entity.state.node_state
         node_state_argument_type = NodeStateArgumentType.objects.register_for_entity(entity)
-        node_state_argument, created = self.get_or_create(node=node, node_state_argument_type=node_state_argument_type, src_id=entity.pk)
+        node_state_argument, created = self.get_or_create(node_state=node_state, node_state_argument_type=node_state_argument_type, src_id=entity.pk)
         return node_state_argument
         
 class NodeStateArgument(models.Model):

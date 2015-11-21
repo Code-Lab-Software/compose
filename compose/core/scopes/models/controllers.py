@@ -103,12 +103,7 @@ class ControllerBase(models.Model):
         abstract = True
 
 class ControllerAttributeMixin(object):
-    
-    def get_controller(self):
-        # It is assumed, that by default the controller argument
-        # points to it's parent through the `controller`
-        # attribute. The subclasses can override it, though.
-        return self.controller
+    pass
         
 # -------------------------------------------------------
 # Controller
@@ -141,10 +136,18 @@ class Controller(ControllerBase):
 class ControllerStateArgument(ControllerBase, ControllerAttributeMixin):
     name = models.SlugField()
     node_state_argument = models.OneToOneField('scopes.NodeStateArgument', null=True, editable=False)
-    
+
+    class Meta:
+        abstract = True
+        # It's assumed here, that relation to the parent state object
+        # is provided with the 'state' ForeignKey or
+        # OneToOneField. But it would be better to handle the name of the attribute
+        # dynamically. 
+        unique_together = (('name', 'state'),)
+
     @classmethod
     def update_registry(cls, mdl, registry):
-        state_mdl = mdl._meta.get_field_by_name('state')[0].related_model
+        state_mdl = mdl._meta.get_field_by_name('state')[0].rel.to
         if registry[mdl._meta.app_label]['states'].has_key(state_mdl):
             registry[mdl._meta.app_label]['states'][state_mdl].append(mdl)
         else:
@@ -155,14 +158,13 @@ class ControllerStateArgument(ControllerBase, ControllerAttributeMixin):
         self.node_state_argument = node_state_argument
         self.save()
    
-    class Meta:
-        abstract = True
-        # It's assumed here, that relation to the parent state object
-        # is provided with the 'state' ForeignKey or
-        # OneToOneField. But it would be better to handle the name of the attribute
-        # dynamically. 
-        unique_together = (('name', 'state'),)
-
+    def get_controller(self):
+        # It is assumed, that by default the controller argument
+        # points to it's parent through the `controller`
+        # attribute. The subclasses can override it, though.
+        return self.state.get_controller()
+    
+    
 # -------------------------------------------------------
 # ControllerState
 # -------------------------------------------------------
@@ -170,6 +172,13 @@ class ControllerStateArgument(ControllerBase, ControllerAttributeMixin):
 class ControllerState(ControllerBase, ControllerAttributeMixin):
     name = models.SlugField()
     node_state = models.OneToOneField('scopes.NodeState', null=True, editable=False)
+
+    class Meta:
+        abstract = True
+        # Same story with the `controller` key as in the `unique_together`
+        # in ControllerArgument class
+        unique_together = (('name', 'controller'),)
+
 
     @classmethod
     def update_registry(cls, mdl, registry):
@@ -181,24 +190,27 @@ class ControllerState(ControllerBase, ControllerAttributeMixin):
         self.node_state = node_state
         self.save()
    
-    def get(self):
+    def get(self, **kwargs):
         raise NotImplementedError('get() method has to to be implemented in ControllerState derived classes.')
         
-    class Meta:
-        abstract = True
-        # Same story with the `controller` key as in the `unique_together`
-        # in ControllerArgument class
-        unique_together = (('name', 'controller'),)
-
-
+    def get_controller(self):
+        # It is assumed, that by default the controller argument
+        # points to it's parent through the `controller`
+        # attribute. The subclasses can override it, though.
+        return self.controller
+    
+   
 # -------------------------------------------------------
 # ControllerStateArgumentProvider
 # -------------------------------------------------------
 
-class ControllerStateArgumentProvider(ControllerBase, ControllerAttributeMixin):
+class ControllerStateArgumentProvider(ControllerBase):
     name = models.SlugField()
     node_state_argument = models.OneToOneField('scopes.NodeStateArgument')
     node_state_argument_provider = models.OneToOneField('scopes.NodeStateArgumentProvider', null=True, editable=False)
+
+    class Meta:
+        abstract = True
 
     @classmethod
     def update_registry(cls, mdl, registry):
@@ -209,6 +221,4 @@ class ControllerStateArgumentProvider(ControllerBase, ControllerAttributeMixin):
         self.node_state_argument_provider = node_state_argument_provider
         self.save()
    
-    class Meta:
-        abstract = True
-
+   
