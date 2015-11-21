@@ -7,6 +7,7 @@ from compose.core.scopes.models import is_controller
 COMPOSE_APPS = (
     'scopes',
     'resources',
+    'providers',
 )
 
 def is_compose_model(model):
