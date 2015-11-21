@@ -11,7 +11,6 @@ class ResourceView(View):
         return super(ResourceView, self).dispatch(*args, **kwargs)
 
     def get_resource(self, *args, **kwargs):
-        print 'get_resource', kwargs
         return get_object_or_404(
             apps.get_model('resources.Resource'),
             name=kwargs.get('resource_name')
