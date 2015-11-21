@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.signals import post_save
 
-CONTROLLER_CLASSES = ['Controller', 'ControllerArgument', 'ControllerState']
+CONTROLLER_CLASSES = ['Controller', 'ControllerStateArgument', 'ControllerState', 'ControllerStateArgumentSource']
 
 def register_on_post_save(sender, instance, created, raw, using, **kwargs):
     instance.register_with_branch()
@@ -62,7 +62,7 @@ class ControllerBase(models.Model):
     def register_model(cls, mdl):
         controller_class = cls.__name__.lower()
         if not cls.__models_registry.has_key(mdl._meta.app_label):
-            cls.__models_registry[mdl._meta.app_label] = {'controller': None, 'states': [], 'arguments': []}
+            cls.__models_registry[mdl._meta.app_label] = {'controller': None, 'states': {}, 'argument_sources': []}
         if cls.__models_registry.has_key(mdl._meta.app_label) and not cls.__models_registry[mdl._meta.app_label].has_key(mdl._meta.object_name):
             print 'Registering %s: %s' % (controller_class, mdl)
             # Now delegate the registry update to the proper subclass
@@ -79,7 +79,7 @@ class ControllerBase(models.Model):
         return apps.get_model('scopes.%s' % models_map.get(self.__class__.name))
 
     def get_scopes_entity_model(self):
-        models_map = {'Controller': 'Node', 'ControllerArgument': 'NodeArgument', 'ControllerState': 'NodeState'}
+        models_map = {'Controller': 'Node', 'ControllerStateArgument': 'NodeStateArgument', 'ControllerState': 'NodeState'}
         # Below we should call some 'get_controller_type' method instead of a complicated __models_registry lookup
         return apps.get_model('scopes.%s' % models_map.get(ControllerBase.__models_registry[self._meta.app_label][self._meta.object_name].__name__))
 
@@ -94,7 +94,9 @@ class ControllerBase(models.Model):
         return self.get_scopes_entity_model().objects.register_for_entity(self)        
 
     def register_with_branch(self):
-        return self.register_scopes_entity()
+        scopes_entity = self.register_scopes_entity()
+        self.connect_with_scopes_entity(scopes_entity)
+        return scopes_entity
 
     class Meta:
         abstract = True
@@ -124,28 +126,41 @@ class Controller(ControllerBase):
         registry[mdl._meta.app_label]['controller'] = mdl
         registry[mdl._meta.app_label][mdl._meta.object_name] = Controller
         
+    def connect_with_scopes_entity(self, node):
+        self.node = node
+        self.save()
+        
     class Meta:
         abstract = True
    
 # -------------------------------------------------------
-# ControllerArgument
+# ControllerStateArgument
 # -------------------------------------------------------
 
-class ControllerArgument(ControllerBase, ControllerAttributeMixin):
+class ControllerStateArgument(ControllerBase, ControllerAttributeMixin):
     name = models.SlugField()
+    node_state_argument = models.OneToOneField('scopes.NodeStateArgument', null=True, editable=False)
     
     @classmethod
     def update_registry(cls, mdl, registry):
-        registry[mdl._meta.app_label]['arguments'].append(mdl)
-        registry[mdl._meta.app_label][mdl._meta.object_name] = ControllerArgument
+        state_mdl = mdl._meta.get_field_by_name('state')[0].related_model
+        if registry[mdl._meta.app_label]['states'].has_key(state_mdl):
+            registry[mdl._meta.app_label]['states'][state_mdl].append(mdl)
+        else:
+            registry[mdl._meta.app_label]['states'][state_mdl] = [mdl]
+        registry[mdl._meta.app_label][mdl._meta.object_name] = ControllerStateArgument
     
+    def connect_with_scopes_entity(self, node_state_argument):
+        self.node_state_argument = node_state_argument
+        self.save()
+   
     class Meta:
         abstract = True
-        # It's assumed here, that relation to the parent controller object
-        # is provided with the 'controller' ForeignKey or
+        # It's assumed here, that relation to the parent state object
+        # is provided with the 'state' ForeignKey or
         # OneToOneField. But it would be better to handle the name of the attribute
         # dynamically. 
-        unique_together = (('name', 'controller'),)
+        unique_together = (('name', 'state'),)
 
 # -------------------------------------------------------
 # ControllerState
@@ -153,16 +168,43 @@ class ControllerArgument(ControllerBase, ControllerAttributeMixin):
 
 class ControllerState(ControllerBase, ControllerAttributeMixin):
     name = models.SlugField()
+    node_state = models.OneToOneField('scopes.NodeState', null=True, editable=False)
 
     @classmethod
     def update_registry(cls, mdl, registry):
-        registry[mdl._meta.app_label]['states'].append(mdl)
+        if not registry[mdl._meta.app_label]['states'].has_key(mdl):
+            registry[mdl._meta.app_label]['states'] = {mdl: []}
         registry[mdl._meta.app_label][mdl._meta.object_name] = ControllerState
     
+    def connect_with_scopes_entity(self, node_state):
+        self.node_state = node_state
+        self.save()
+   
     class Meta:
         abstract = True
         # Same story with the `controller` key as in the `unique_together`
         # in ControllerArgument class
         unique_together = (('name', 'controller'),)
 
+
+# -------------------------------------------------------
+# ControllerStateArgumentSource
+# -------------------------------------------------------
+
+class ControllerStateArgumentSource(ControllerBase, ControllerAttributeMixin):
+    name = models.SlugField()
+    node_state_argument = models.OneToOne('scopes.NodeStateArgument')
+    node_state_argument_source = models.OneToOneField('scopes.NodeStateArgumentSource', null=True, editable=False)
+
+    @classmethod
+    def update_registry(cls, mdl, registry):
+        registry[mdl._meta.app_label]['argument_sources'].appen(mdl)
+        registry[mdl._meta.app_label][mdl._meta.object_name] = ControllerStateArgumentSource
     
+    def connect_with_scopes_entity(self, node_state_argument_source):
+        self.node_state_argument_source = node_state_argument_source
+        self.save()
+   
+    class Meta:
+        abstract = True
+
