@@ -35,7 +35,7 @@ class ResourceView(View):
             'nodes': [],
         }
         for node in resource.branch.nodes.all():
-            resp['nodes'].append(node.name)
+            resp['nodes'].append(node.get_object().name)
         return HttpResponse(json.dumps(resp), content_type='application/json')
 
     def get(self, request, *args, **kwargs):
