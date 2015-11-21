@@ -121,12 +121,17 @@ class Node(models.Model):
 
     def get_required_nodes(self):
         node_ids = get_model('providers','NoteStateArgumentProvider').objects.filter(node_state__node=self).value_list('node_state_argument__node_state__node', flat=True)
-        
         return self.__class__.objects.filter(id__in=node_ids)
 
     def get_object(self):
         return self.node_type.get_model().objects.get(id=self.src_id)
 
+    def get(self):
+        data = {}
+        for state in self.states.all():
+            data[state.get_object().name] = state.get()
+        return data
+        
     class Meta:
         unique_together = (('node_type', 'src_id'),)
 
@@ -150,6 +155,9 @@ class NodeState(models.Model):
     def get_object(self):
         return self.node_state_type.get_model().objects.get(id=self.src_id)
 
+    def get(self):
+        return self.get_object().get()
+        
     class Meta:
         unique_together = (('node_state_type', 'src_id'),)
 

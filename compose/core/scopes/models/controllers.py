@@ -180,6 +180,9 @@ class ControllerState(ControllerBase, ControllerAttributeMixin):
         self.node_state = node_state
         self.save()
    
+    def get(self):
+        raise NotImplementedError('get() method has to to be implemented in ControllerState derived classes.')
+        
     class Meta:
         abstract = True
         # Same story with the `controller` key as in the `unique_together`
