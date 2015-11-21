@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.signals import post_save
 
-CONTROLLER_CLASSES = ['Controller', 'ControllerStateArgument', 'ControllerState', 'ControllerStateArgumentSource']
+CONTROLLER_CLASSES = ['Controller', 'ControllerStateArgument', 'ControllerState', 'ControllerStateArgumentProvider']
 
 def register_on_post_save(sender, instance, created, raw, using, **kwargs):
     instance.register_with_branch()
@@ -62,7 +62,7 @@ class ControllerBase(models.Model):
     def register_model(cls, mdl):
         controller_class = cls.__name__.lower()
         if not cls.__models_registry.has_key(mdl._meta.app_label):
-            cls.__models_registry[mdl._meta.app_label] = {'controller': None, 'states': {}, 'argument_sources': []}
+            cls.__models_registry[mdl._meta.app_label] = {'controller': None, 'states': {}, 'argument_providers': []}
         if cls.__models_registry.has_key(mdl._meta.app_label) and not cls.__models_registry[mdl._meta.app_label].has_key(mdl._meta.object_name):
             print 'Registering %s: %s' % (controller_class, mdl)
             # Now delegate the registry update to the proper subclass
@@ -188,21 +188,21 @@ class ControllerState(ControllerBase, ControllerAttributeMixin):
 
 
 # -------------------------------------------------------
-# ControllerStateArgumentSource
+# ControllerStateArgumentProvider
 # -------------------------------------------------------
 
-class ControllerStateArgumentSource(ControllerBase, ControllerAttributeMixin):
+class ControllerStateArgumentProvider(ControllerBase, ControllerAttributeMixin):
     name = models.SlugField()
     node_state_argument = models.OneToOne('scopes.NodeStateArgument')
-    node_state_argument_source = models.OneToOneField('scopes.NodeStateArgumentSource', null=True, editable=False)
+    node_state_argument_provider = models.OneToOneField('scopes.NodeStateArgumentProvider', null=True, editable=False)
 
     @classmethod
     def update_registry(cls, mdl, registry):
-        registry[mdl._meta.app_label]['argument_sources'].appen(mdl)
-        registry[mdl._meta.app_label][mdl._meta.object_name] = ControllerStateArgumentSource
+        registry[mdl._meta.app_label]['argument_providers'].appen(mdl)
+        registry[mdl._meta.app_label][mdl._meta.object_name] = ControllerStateArgumentProvider
     
-    def connect_with_scopes_entity(self, node_state_argument_source):
-        self.node_state_argument_source = node_state_argument_source
+    def connect_with_scopes_entity(self, node_state_argument_provider):
+        self.node_state_argument_provider = node_state_argument_provider
         self.save()
    
     class Meta:

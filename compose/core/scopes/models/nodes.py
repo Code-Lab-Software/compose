@@ -80,19 +80,19 @@ class NodeStateType(models.Model):
         unique_together = (('node_type', 'model_name'),)
 
         
-class NodeStateArgumentSourceTypeManager(models.Manager):
+class NodeStateArgumentProviderTypeManager(models.Manager):
 
     def register_for_entity(self, entity):
-        node_state_argument_source_type, created = self.get_or_create(app_label=entity._meta.app_label,
+        node_state_argument_provider_type, created = self.get_or_create(app_label=entity._meta.app_label,
                                                  model_name=entity._meta.object_name.lower())
-        return node_state_argument_source_type
+        return node_state_argument_provider_type
         
-class NodeStateArgumentSourceType(models.Model):
+class NodeStateArgumentProviderType(models.Model):
 
     app_label = models.CharField(max_length=127)
     model_name = models.CharField(max_length=127)
 
-    objects = NodeStateArgumentSourceTypeManager()
+    objects = NodeStateArgumentProviderTypeManager()
 
     def get_model(self):
         return apps.get_model(self.app_label, self.model_name)
@@ -173,26 +173,26 @@ class NodeStateArgument(models.Model):
     class Meta:
         unique_together = (('node_state_argument_type', 'src_id'),)
 
-class NodeStateArgumentSourceManager(models.Manager):
+class NodeStateArgumentProviderManager(models.Manager):
 
     def register_for_entity(self, entity):
-        node_state_argument_source_type = NodeStateArgumentSourceType.objects.register_for_entity(entity)
-        node_state_argument_source, created = self.get_or_create(node_state_argument=entity.node_state_argument, node_state_argument_source_type=node_state_argument_source_type, src_id=entity.pk)
-        return node_state_argument_source
+        node_state_argument_provider_type = NodeStateArgumentProviderType.objects.register_for_entity(entity)
+        node_state_argument_provider, created = self.get_or_create(node_state_argument=entity.node_state_argument, node_state_argument_provider_type=node_state_argument_provider_type, src_id=entity.pk)
+        return node_state_argument_provider
 
 
-class NodeStateArgumentSource(models.Model):
-    node_state_argument = models.ForeignKey('scopes.NodeStateArgument', related_name='sources')
-    node_state_argument_source_type = models.ForeignKey('NodeStateArgumentSourceType', related_name='sources')
+class NodeStateArgumentProvider(models.Model):
+    node_state_argument = models.ForeignKey('scopes.NodeStateArgument', related_name='providers')
+    node_state_argument_provider_type = models.ForeignKey('NodeStateArgumentProviderType', related_name='providers')
     src_id = models.PositiveIntegerField()
 
-    objects = NodeStateArgumentSourceManager()
+    objects = NodeStateArgumentProviderManager()
 
     def get_object(self):
-        return self.node_state_argument_source_type.get_model().objects.get(id=self.src_id)
+        return self.node_state_argument_provider_type.get_model().objects.get(id=self.src_id)
     
     class Meta:
-        unique_together = (('node_state_argument_source_type', 'src_id'),)
+        unique_together = (('node_state_argument_provider_type', 'src_id'),)
 
 
     
