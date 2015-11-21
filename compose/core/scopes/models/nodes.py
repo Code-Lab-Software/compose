@@ -120,7 +120,9 @@ class Node(models.Model):
     objects = NodeManager()
 
     def get_required_nodes(self):
-       return self.__class__.objects.filter(states__provider__branch_argument__providers__node_argument__node=self)
+        node_ids = get_model('providers','NoteStateArgumentProvider').objects.filter(node_state__node=self).value_list('node_state_argument__node_state__node', flat=True)
+        
+        return self.__class__.objects.filter(id__in=node_ids)
 
     def get_object(self):
         return self.node_type.get_model().objects.get(id=self.src_id)
