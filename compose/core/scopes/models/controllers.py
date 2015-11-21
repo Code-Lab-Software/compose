@@ -193,7 +193,7 @@ class ControllerState(ControllerBase, ControllerAttributeMixin):
 
 class ControllerStateArgumentProvider(ControllerBase, ControllerAttributeMixin):
     name = models.SlugField()
-    node_state_argument = models.OneToOne('scopes.NodeStateArgument')
+    node_state_argument = models.OneToOneField('scopes.NodeStateArgument')
     node_state_argument_provider = models.OneToOneField('scopes.NodeStateArgumentProvider', null=True, editable=False)
 
     @classmethod

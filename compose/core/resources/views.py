@@ -14,10 +14,9 @@ class ResourceView(View):
         )
 
     def options(self, request, *args, **kwargs):
-        print 'kwargs:', kwargs
         resource = self.get_resource(*args, **kwargs)
         resp = {
             'name': resource.name,
             'verbose_name': resource.verbose_name,
         }
-        return HttpResponse(json.dumps(resp), content_type="application/json")
+        return HttpResponse(json.dumps(resp), content_type='application/json')
