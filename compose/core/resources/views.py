@@ -32,5 +32,29 @@ class ResourceView(View):
         resp = {
             'name': resource.name,
             'verbose_name': resource.verbose_name,
+            'nodes': [],
         }
+        for node in resource.branch.nodes.all():
+            resp['nodes'].append(node.name)
         return HttpResponse(json.dumps(resp), content_type='application/json')
+
+    def get(self, request, *args, **kwargs):
+        nid = request.GET.get('nid', None)
+        if nid:
+            # we have Node ID so it is request for node:
+            node = get_object_or_404(
+                apps.get_model('scopes.Node'),
+                id=nid
+            )
+            node_val = node.get()
+            try:
+                resp = json.dumps(node_val)
+            except TypeError, e:
+                ret = {}
+                for k, v in node_val.iteritems():
+                    ret[k] = u'%s' % v
+                resp = json.dumps(ret)
+            return HttpResponse(resp, content_type='application/json')
+        else:
+            # request for whole branch
+            return HttpResponse(json.dumps({'title': "I'm the BRANCH biiiiiatch!", 'content': 'What would you like to do?'}), content_type='application/json')
