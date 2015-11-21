@@ -29,6 +29,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'compose.core.scopes',
+    'compose.core.resources',
+    'compose.core.providers',
 )
 
 MIDDLEWARE_CLASSES = (
