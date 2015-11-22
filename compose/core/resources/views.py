@@ -17,15 +17,30 @@ class ResourceView(View):
         )
 
     def check_arguments(self, *args, **kwargs):
-        print 'kwargs:', kwargs
         if kwargs.get('arguments', None):
             resource_arguments = kwargs.get('arguments').split('/')
             if len(resource_arguments) != self.get_resource(*args, **kwargs).resourceargument_set.count():
-                print 'raisuje 404!'
                 raise Http404
         elif self.get_resource(*args, **kwargs).resourceargument_set.count() != 0:
             raise Http404
 
+    def get_arguments(self, *args, **kwargs):
+        if self.kwargs.get('arguments'):
+            self.check_arguments(*args, **kwargs)
+            argument_providers = apps.get_model('providers.ResourceStateArgumentProvider').objects.filter(resource_argument__resource=self.get_resource(*args, **kwargs))
+            arguments = self.get_resource(*args, **kwargs).resourceargument_set.filter(resourcestateargumentprovider__in=argument_providers)
+            print 'arg_prov:', argument_providers
+            print 'arguments:', arguments
+            local_kwargs = {}
+            for argument_provider in argument_providers:
+                print 'kwargs', kwargs
+                print 'name', argument_provider.resource_argument.name
+                #local_kwargs[argument_provider.node_state_argument.get_object().name] = self.kwargs.get(argument_provider.resource_argument.name)
+                local_kwargs[argument_provider.node_state_argument.get_object().name] = self.kwargs.get('arguments')
+            return local_kwargs
+            return dict(zip(arguments, self.kwargs.get('arguments').split('/')))
+        return None
+        
     def options(self, request, *args, **kwargs):
         self.check_arguments(*args, **kwargs)
         resource = self.get_resource(*args, **kwargs)
@@ -39,6 +54,7 @@ class ResourceView(View):
         return HttpResponse(json.dumps(resp), content_type='application/json')
 
     def get(self, request, *args, **kwargs):
+        self.check_arguments(*args, **kwargs)
         nid = request.GET.get('nid', None)
         if nid:
             # we have Node ID so it is request for node:
@@ -46,7 +62,8 @@ class ResourceView(View):
                 apps.get_model('scopes.Node'),
                 id=nid
             )
-            node_val = node.get()
+            print 'lala', self.get_arguments(*args, **kwargs)
+            node_val = node.get(**self.get_arguments(*args, **kwargs))
             try:
                 resp = json.dumps(node_val)
             except TypeError, e:

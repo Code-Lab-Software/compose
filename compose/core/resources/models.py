@@ -23,5 +23,6 @@ class ResourceArgument(models.Model):
         return u'%s (%s)' % (self.name, self.regex)
 
     class Meta:
+        ordering = ('resource', 'weight', 'name')
         unique_together = ('resource', 'name')
         verbose_name = u'Resource argument'

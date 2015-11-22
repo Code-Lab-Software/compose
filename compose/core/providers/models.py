@@ -8,7 +8,7 @@ class ResourceStateArgumentProvider(ControllerStateArgumentProvider):
     class Meta:
         verbose_name = u'Resource state argument provider'
 
-class NoteStateArgumentProvider(ControllerStateArgumentProvider):
+class NodeStateArgumentProvider(ControllerStateArgumentProvider):
     node_state = models.ForeignKey('scopes.NodeState')
     
     class Meta:

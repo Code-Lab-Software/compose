@@ -76,11 +76,11 @@ class ControllerBase(models.Model):
         raise NotImplementedError('`update_registry` class method have to be implemented in ControllerBase derived classes.')
 
     def get_scopes_type_model(self):
-        models_map = {'Conroller': 'NodeType', 'ControllerArgument': 'NodeArgumentType', 'ControllerState': 'NodeStateType'}
+        models_map = {'Conroller': 'NodeType', 'ControllerArgument': 'NodeArgumentType', 'ControllerState': 'NodeStateType', 'ControllerStateArgumentProvider': 'NodeStateArgumentProviderType'}
         return apps.get_model('scopes.%s' % models_map.get(self.__class__.name))
 
     def get_scopes_entity_model(self):
-        models_map = {'Controller': 'Node', 'ControllerStateArgument': 'NodeStateArgument', 'ControllerState': 'NodeState'}
+        models_map = {'Controller': 'Node', 'ControllerStateArgument': 'NodeStateArgument', 'ControllerState': 'NodeState', 'ControllerStateArgumentProvider': 'NodeStateArgumentProvider'}
         # Below we should call some 'get_controller_type' method instead of a complicated __models_registry lookup
         return apps.get_model('scopes.%s' % models_map.get(ControllerBase.__models_registry[self._meta.app_label][self._meta.object_name].__name__))
 
