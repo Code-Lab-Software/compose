@@ -114,7 +114,7 @@ class NodeManager(models.Manager):
 
 class Node(models.Model):
     branch = models.ForeignKey('scopes.Branch', related_name='nodes')
-    node_type = models.ForeignKey('NodeType', related_name='nodes')
+    node_type = models.ForeignKey('scopes.NodeType', related_name='nodes')
     src_id = models.PositiveIntegerField()
 
     objects = NodeManager()
@@ -147,7 +147,7 @@ class NodeStateManager(models.Manager):
     
 class NodeState(models.Model):
     node = models.ForeignKey('scopes.Node', related_name='states')
-    node_state_type = models.ForeignKey('NodeStateType', related_name='states')
+    node_state_type = models.ForeignKey('scopes.NodeStateType', related_name='states')
     src_id = models.PositiveIntegerField()
 
     objects = NodeStateManager()
@@ -176,7 +176,7 @@ class NodeStateArgumentManager(models.Manager):
         
 class NodeStateArgument(models.Model):
     node_state = models.ForeignKey('scopes.NodeState', related_name='arguments')
-    node_state_argument_type = models.ForeignKey('NodeStateArgumentType', related_name='arguments')
+    node_state_argument_type = models.ForeignKey('scopes.NodeStateArgumentType', related_name='arguments')
     src_id = models.PositiveIntegerField()
 
     objects = NodeStateArgumentManager()
@@ -197,7 +197,7 @@ class NodeStateArgumentProviderManager(models.Manager):
 
 class NodeStateArgumentProvider(models.Model):
     node_state_argument = models.ForeignKey('scopes.NodeStateArgument', related_name='providers')
-    node_state_argument_provider_type = models.ForeignKey('NodeStateArgumentProviderType', related_name='providers')
+    node_state_argument_provider_type = models.ForeignKey('scopes.NodeStateArgumentProviderType', related_name='providers')
     src_id = models.PositiveIntegerField()
 
     objects = NodeStateArgumentProviderManager()
