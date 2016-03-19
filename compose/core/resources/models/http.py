@@ -1,7 +1,8 @@
 from django.db import models
+from compose.core.resources.models import ResourceBase, ResourceArgument
 
 
-class Resource(models.Model):
+class HttpResource(ResourceBase):
     branch = models.OneToOneField('scopes.Branch')
     name = models.SlugField(max_length=128, unique=True)
     verbose_name = models.CharField(max_length=255, unique=True)
@@ -13,7 +14,7 @@ class Resource(models.Model):
         verbose_name = u'Resource'
 
 
-class ResourceArgument(models.Model):
+class HttpResourceArgument(ResourceArgumentBase):
     resource = models.ForeignKey('Resource')
     name = models.SlugField(max_length=128)
     regex = models.CharField(max_length=255)
@@ -26,3 +27,4 @@ class ResourceArgument(models.Model):
         ordering = ('resource', 'weight', 'name')
         unique_together = ('resource', 'name')
         verbose_name = u'Resource argument'
+

@@ -1,0 +1,32 @@
+
+- Obsłużyć dubel nazwy NodeStateArgumentProvider
+
+- Obsłużyć zmianę nazwy z Resource na HttpResource
+
+- Zastanowić się nad skrótem nazwy NodeState do State i powiązanymi z tym zmianami
+
+- Komunikacja pomiędzy nodami: generalna obsługa node-argument-provider
+
+  * opracować algorytm iteracji po nodach (zależności pomiędzy nodami)
+
+  * zrobić na Branch metodę get(**kwargs), która zwróci słownik {node_name: value},
+    gdzie `node_name` jest nazwą noda a value to wynik zwracany przez metodę get
+    odpaloną na node->controller
+
+- Obsłużyć głównego Viewsa (ResourceView) i dispatchowanie do Viewsów realizujących
+  konkretną obsługę Requesta (ze względu na http.Method)
+
+- Obsłużyć ContentNegotiation w dispatchu głównym
+
+- Napisać viewsa HTMLGetView
+
+- Napisać viewsa JsonGetView
+
+- Napisać PostView
+
+- Napisać OptionsView
+
+- Napisać Datasets
+
+- Napisać Auth
+

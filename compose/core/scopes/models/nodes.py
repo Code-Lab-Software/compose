@@ -41,14 +41,14 @@ class NodeType(models.Model):
 class NodeStateArgumentTypeManager(models.Manager):
 
     def register_for_entity(self, entity):
-        node_type = NodeType.objects.register_for_entity(entity.get_controller())
-        argument_type, created = self.get_or_create(node_type=node_type,
+        node_state_type = NodeStateType.objects.register_for_entity(entity.get_controller())
+        argument_type, created = self.get_or_create(node_state_type=node_state_type,
                                                     model_name=entity._meta.object_name.lower())
         return argument_type
 
 
 class NodeStateArgumentType(models.Model):
-    node_type = models.ForeignKey('scopes.NodeType')
+    node_state_type = models.ForeignKey('scopes.NodeStateType')
     model_name = models.CharField(max_length=127)
 
     objects = NodeStateArgumentTypeManager()
