@@ -2,16 +2,14 @@
 import inspect
 
 from django.conf import settings
-from compose.core.scopes.models import is_controller
+#from compose.core.scopes.models import is_controller
 
 COMPOSE_APPS = (
     'scopes',
-    'resources',
-    'providers',
 )
 
 def is_compose_model(model):
-    return (model._meta.app_label in COMPOSE_APPS) or is_controller(model)
+    return (model._meta.app_label in COMPOSE_APPS)# or is_controller(model)
 
 def is_compose_object(obj):
     return is_compose_model(obj.__class__)

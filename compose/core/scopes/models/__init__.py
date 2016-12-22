@@ -1,5 +1,3 @@
-from roots import *
-from branches import *
+from resources import *
 from nodes import *
-from controllers import *
 

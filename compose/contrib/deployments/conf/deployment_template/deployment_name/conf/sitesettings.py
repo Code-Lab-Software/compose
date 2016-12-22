@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/{{ docs_version }}/ref/settings/
 """
 
 import os
+import global_settings
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/{{ docs_version }}/howto/deployment/checklist/
@@ -36,17 +37,16 @@ DEBUG = True
 # ----------------------
 # Tutaj komentarz
 # ---------------------
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, '..', 'db.sqlite3'),
-#     },
-#     'compose': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, '..', 'compose.sqlite3'),
-#     }
-
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(global_settings.BASE_DIR, '..', 'db.sqlite3'),
+    },
+    'compose': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(global_settings.BASE_DIR, '..', 'compose.sqlite3'),
+    }
+}
 
 ALLOWED_HOSTS = []
 

@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Root, Branch, Node, NodeStateArgument, NodeState, NodeType, NodeStateArgumentType, NodeStateType
+from .models import Resource, Scope
 
-@admin.register(Root, Branch, Node, NodeStateArgument, NodeState, NodeType, NodeStateArgumentType, NodeStateType)
+@admin.register(Resource, Scope)
 class ScopesAdmin(admin.ModelAdmin):
     pass

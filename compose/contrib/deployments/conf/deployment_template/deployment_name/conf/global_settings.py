@@ -12,9 +12,14 @@ https://docs.djangoproject.com/en/{{ docs_version }}/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Add compose modules to path
+DEP_LOCATION = os.path.split(BASE_DIR)[0]
+for pth in ('%s/../../', '%s/../../compose/core/'):
+    sys.path.append(pth % DEP_LOCATION)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/{{ docs_version }}/howto/deployment/checklist/
@@ -29,8 +34,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'compose.core.scopes',
-    'compose.core.resources',
-    'compose.core.providers',
 )
 
 MIDDLEWARE_CLASSES = (
