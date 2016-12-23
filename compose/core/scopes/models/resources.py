@@ -26,7 +26,7 @@ class Identifier(models.Model):
     resource = models.ForeignKey('scopes.Resource', related_name='identifiers')
     weight = models.PositiveSmallIntegerField()
     name = models.SlugField(max_length=128)
-    regex = models.SlugField(max_length=128)
+    regex = models.CharField(max_length=128)
 
     class Meta:
         ordering = ('resource__name', 'weight', 'name')
